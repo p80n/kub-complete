@@ -11,8 +11,12 @@ Then when running *describe* or *exec* commands, you'll be able to tab complete 
 ```shell
 ~>kubectl exec <tab><tab>
 master-pod-13kk3
+worker-pod-2941k
+worker-pod-12asd
+
 ~>kubectl exec worker<tab>
 worker-pod-2941k
 worker-pod-12asd
+
 ~>kubectl exec worker-pod-
 ```
