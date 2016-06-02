@@ -1,0 +1,51 @@
+_build_command(){
+    local tokens=( $COMP_LINE )
+
+    KUBECMD=${tokens[0]}
+
+    for i in "${!tokens[@]}"; do
+        word=${tokens[$i]}
+        case "$word" in
+            --kubeconfig=*|--namespace=*|--user=*)   KUBECMD="${KUBECMD} $word";;
+            --kubeconfig |--namespace |--user )      KUBECMD="${KUBECMD} $word ${tokens[$((i+1))]}";;
+        esac
+    done
+
+}
+
+_kubectl-complete()
+{
+  local cmd="${1##*/}"
+  local line=${COMP_LINE}
+  local prev=${COMP_WORDS[COMP_CWORD-1]}
+  local cur=${COMP_WORDS[COMP_CWORD]}
+
+  _build_command
+  COMPREPLY=()
+  case "$prev" in
+      logs|exec|pod|pods)
+          podlist=$(${KUBECMD} get pods)
+          if [ $? = 0 ]; then
+              pods=$(awk 'NR>1{print $1}' <<< "$podlist" )
+              COMPREPLY=( $( compgen -W "$pods" -- $cur) )
+          fi
+          ;;
+  esac
+
+  return 0
+}
+
+# CMD="kubectl"
+# if [ -z $KUBECONFIG ]; then
+#   CMD="${CMD} --kubeconfig=$KUBECONFIG"
+# else
+#   if [ -f "./kubeconfig" ]; then
+#     CMD="${CMD} --kubeconfig=./kubeconfig"
+#   else
+#     if [ -f "~/.kubeconfig" ]; then
+#       CMD="${CMD} --kubeconfig=~/kubeconfig"
+#     fi
+#   fi
+# fi
+
+complete -o default -F _kubectl-complete -o filenames kubectl
