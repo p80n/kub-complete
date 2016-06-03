@@ -1,3 +1,21 @@
+function kub(){
+    local kubeconfig=""
+    local inject_kubeconfig=0
+
+    if [[ ! "$*" =~ --kubeconfig ]]; then  # don't append kubeconfig if one specified
+        if [ -e "kubeconfig" ]; then
+            kubeconfig="--kubeconfig=kubeconfig"
+        else
+            if [ -e "$HOME/.kubeconfig" ]; then
+                kubeconfig="--kubeconfig=$HOME/.kubeconfig"
+            fi
+        fi
+        /usr/bin/env kubectl "$kubeconfig" "$@"
+    else
+        /usr/bin/env kubectl "$@"
+    fi
+}
+
 _build_command(){
     local tokens=( $COMP_LINE )
 
@@ -35,17 +53,4 @@ _kubectl-complete()
   return 0
 }
 
-# CMD="kubectl"
-# if [ -z $KUBECONFIG ]; then
-#   CMD="${CMD} --kubeconfig=$KUBECONFIG"
-# else
-#   if [ -f "./kubeconfig" ]; then
-#     CMD="${CMD} --kubeconfig=./kubeconfig"
-#   else
-#     if [ -f "~/.kubeconfig" ]; then
-#       CMD="${CMD} --kubeconfig=~/kubeconfig"
-#     fi
-#   fi
-# fi
-
-complete -o default -F _kubectl-complete -o filenames kubectl
+complete -o default -F _kubectl-complete -o filenames kub
