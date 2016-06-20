@@ -1,3 +1,6 @@
+TIMEOUT=30
+
+
 function kub(){
     local kubeconfig=""
     local inject_kubeconfig=0
@@ -51,7 +54,50 @@ _set_kub_sub_commands(){
 
 }
 
-_kubectl-complete()
+_kub_cache_fetch(){
+    cache=""
+    case $1 in
+        pods)
+            if test "`find ~/.kubcomplete/pods -mtime +${TIMEOUT}s`"; then
+                cache=$(${KUBECMD} get pods)
+                cache=$(awk 'NR>1{print $1}' <<< "$cache" )
+                echo $cache > ~/.kubcomplete/pods
+            else
+                cache=$(<~/.kubcomplete/pods)
+            fi
+            ;;
+        nodes)
+            if test "`find ~/.kubcomplete/nodes -mtime +${TIMEOUT}s`"; then
+                cache=$(${KUBECMD} get nodes)
+                cache=$(awk 'NR>1{print $1}' <<< "$cache" )
+                echo $cache > ~/.kubcomplete/nodes
+            else
+                cache=$(<~/.kubcomplete/nodes)
+            fi
+            ;;
+        services)
+            if test "`find ~/.kubcomplete/services -mtime +${TIMEOUT}s`"; then
+                cache=$(${KUBECMD} get services)
+                cache=$(awk 'NR>1{print $1}' <<< "$cache" )
+                echo $cache > ~/.kubcomplete/services
+            else
+                cache=$(<~/.kubcomplete/services)
+            fi
+            ;;
+        rc)
+            if test "`find ~/.kubcomplete/rc -mtime +${TIMEOUT}s`"; then
+                cache=$(${KUBECMD} get rc)
+                cache=$(awk 'NR>1{print $1}' <<< "$cache" )
+                echo $cache > ~/.kubcomplete/rc
+            else
+                cache=$(<~/.kubcomplete/rc)
+            fi
+            ;;
+    esac
+
+}
+
+_kubectl_complete()
 {
   local cmd="${1##*/}"
   local line=${COMP_LINE}
@@ -68,27 +114,35 @@ _kubectl-complete()
   done
 
   _build_command
+
   COMPREPLY=()
   case "$last_recognized" in
       logs|exec|pod|pods)
-          podlist=$(${KUBECMD} get pods)
+          _kub_cache_fetch pods
+          podlist="$cache"
           if [ $? = 0 ]; then
-              pods=$(awk 'NR>1{print $1}' <<< "$podlist" )
-              COMPREPLY=( $( compgen -W "$pods" -- $cur) )
+              COMPREPLY=( $( compgen -W "$podlist" -- $cur) )
           fi
           ;;
       replicationcontrollers|replicationcontroller|rc|rollingupdate|rolling-update)
-          rclist=$(${KUBECMD} get rc)
+          _kub_cache_fetch rc
+          rclist="$cache"
           if [ $? = 0 ]; then
-              rc=$(awk 'NR>1{print $1}' <<< "$rclist" )
-              COMPREPLY=( $( compgen -W "$rc" -- $cur) )
+              COMPREPLY=( $( compgen -W "$rclist" -- $cur) )
           fi
           ;;
       service|services)
-          rclist=$(${KUBECMD} get services)
+          _kub_cache_fetch services
+          services="$cache"
           if [ $? = 0 ]; then
-              rc=$(awk 'NR>1{print $1}' <<< "$rclist" )
-              COMPREPLY=( $( compgen -W "$rc" -- $cur) )
+              COMPREPLY=( $( compgen -W "$services" -- $cur) )
+          fi
+          ;;
+      node|nodes)
+          _kub_cache_fetch nodes
+          nodes="$cache"
+          if [ $? = 0 ]; then
+              COMPREPLY=( $( compgen -W "$nodes" -- $cur) )
           fi
           ;;
       get|describe)
@@ -102,4 +156,4 @@ _kubectl-complete()
   return 0
 }
 
-complete -o default -F _kubectl-complete -o filenames kub
+complete -o default -F _kubectl_complete -o filenames kub
