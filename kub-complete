@@ -63,9 +63,9 @@ _kub_cache_fetch(){
     if [ $? == 1 ] || [ "$output" == "" ]; then
         CACHE=$(${KUBECMD} get $1)
         CACHE=$(awk 'NR>1{print $1}' <<< "$CACHE" )
-        echo $CACHE > ~/.kub-complete/$1
+        echo $CACHE > ~/.kub-complete/cache/$1
     else
-        CACHE=$(<~/.kub-complete/$1)
+        CACHE=$(<~/.kub-complete/cache/$1)
     fi
 }
 
