@@ -1,7 +1,7 @@
 TIMEOUT=30
 
 
-function kub(){
+kub(){
     local kubeconfig=""
     local inject_kubeconfig=0
 
@@ -58,7 +58,7 @@ _kub_cache_fetch(){
     cache=""
     case $1 in
         pods)
-            if test "`find ~/.kubcomplete/pods -mtime +${TIMEOUT}s`"; then
+            if test "`find ~/.kubcomplete/pods -mtime +${TIMEOUT}s 2>/dev/null`"; then
                 cache=$(${KUBECMD} get pods)
                 cache=$(awk 'NR>1{print $1}' <<< "$cache" )
                 echo $cache > ~/.kubcomplete/pods
@@ -67,7 +67,7 @@ _kub_cache_fetch(){
             fi
             ;;
         nodes)
-            if test "`find ~/.kubcomplete/nodes -mtime +${TIMEOUT}s`"; then
+            if test "`find ~/.kubcomplete/nodes -mtime +${TIMEOUT}s 2>/dev/null`"; then
                 cache=$(${KUBECMD} get nodes)
                 cache=$(awk 'NR>1{print $1}' <<< "$cache" )
                 echo $cache > ~/.kubcomplete/nodes
@@ -76,7 +76,7 @@ _kub_cache_fetch(){
             fi
             ;;
         services)
-            if test "`find ~/.kubcomplete/services -mtime +${TIMEOUT}s`"; then
+            if test "`find ~/.kubcomplete/services -mtime +${TIMEOUT}s 2>/dev/null`"; then
                 cache=$(${KUBECMD} get services)
                 cache=$(awk 'NR>1{print $1}' <<< "$cache" )
                 echo $cache > ~/.kubcomplete/services
@@ -85,7 +85,7 @@ _kub_cache_fetch(){
             fi
             ;;
         rc)
-            if test "`find ~/.kubcomplete/rc -mtime +${TIMEOUT}s`"; then
+            if test "`find ~/.kubcomplete/rc -mtime +${TIMEOUT}s 2>/dev/null`"; then
                 cache=$(${KUBECMD} get rc)
                 cache=$(awk 'NR>1{print $1}' <<< "$cache" )
                 echo $cache > ~/.kubcomplete/rc
@@ -104,7 +104,7 @@ _kubectl_complete()
   local prev=${COMP_WORDS[COMP_CWORD-1]}
   local cur=${COMP_WORDS[COMP_CWORD]}
 
-  known_words="exec|logs|pods|rc|replicationcontrollers|rollingupdate|rolling-update|get|describe|services"
+  known_words="exec|logs*|pods*|rc|replicationcontrollers*|rollingupdate|rolling-update|get|describe|services*"
   last_recognized=""
 
   for word in $line; do
