@@ -1,8 +1,11 @@
 #!/usr/bin/bash
 
+# Rather than query kubernetes for pods,etc with every tabtab, cache the results for CACHE_TIME seconds. Makes tabbing a lot zippier
 CACHE_TIME=30
 
-
+SCRIPT_HOME=$HOME/.kub-complete
+# make a directory for cached values
+[ -d ~/.kub-complete/cache ] || mkdir ~/.kub-complete/cache
 
 kub(){
     local kubeconfig=""
@@ -59,13 +62,13 @@ _set_kub_sub_commands(){
 
 _kub_cache_fetch(){
     CACHE=""
-    output=$(find ~/.kub-complete/$1 -mtime -${CACHE_TIME}s 2>/dev/null)
+    output=$(find $SCRIPT_HOME/cache/$1 -mtime -${CACHE_TIME}s 2>/dev/null)
     if [ $? == 1 ] || [ "$output" == "" ]; then
         CACHE=$(${KUBECMD} get $1)
         CACHE=$(awk 'NR>1{print $1}' <<< "$CACHE" )
-        echo $CACHE > ~/.kub-complete/cache/$1
+        echo $CACHE > $SCRIPT_HOME/cache/$1
     else
-        CACHE=$(<~/.kub-complete/cache/$1)
+        CACHE=$(<$SCRIPT_HOME/cache/$1)
     fi
 }
 
