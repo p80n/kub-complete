@@ -3,11 +3,19 @@ command-line completion for kubernetes
 
 To use, you'll need to source in the file 'kubcomplete':
 ```shell
-~>source kub-complete/kubcomplete
+~>source ~/.kub-complete/kub-complete
 ```
 
-Then when running *describe* or *exec* commands, you'll be able to tab complete to fill the pod ID you want to use.
+Tab completion is currently supported for the following kubernetes commands:
+* get
+* describe
+* exec
+* logs
+* rc
+* rolling-update
+* services
 
+For example:
 ```shell
 ~>kubectl exec <tab><tab>
 master-pod-13kk3
