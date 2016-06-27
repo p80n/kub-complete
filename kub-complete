@@ -88,7 +88,6 @@ _kubectl_complete()
   _build_command
 
   COMPREPLY=()
-  echo $last_recognized
   case "$last_recognized" in
       logs|exec|pod|pods)
           _kub_cache_fetch pods
