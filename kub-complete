@@ -1,4 +1,7 @@
-TIMEOUT=30
+#!/usr/bin/bash
+
+CACHE_TIME=30
+
 
 
 kub(){
@@ -55,46 +58,15 @@ _set_kub_sub_commands(){
 }
 
 _kub_cache_fetch(){
-    cache=""
-    case $1 in
-        pods)
-            if test "`find ~/.kubcomplete/pods -mtime +${TIMEOUT}s 2>/dev/null`"; then
-                cache=$(${KUBECMD} get pods)
-                cache=$(awk 'NR>1{print $1}' <<< "$cache" )
-                echo $cache > ~/.kubcomplete/pods
-            else
-                cache=$(<~/.kubcomplete/pods)
-            fi
-            ;;
-        nodes)
-            if test "`find ~/.kubcomplete/nodes -mtime +${TIMEOUT}s 2>/dev/null`"; then
-                cache=$(${KUBECMD} get nodes)
-                cache=$(awk 'NR>1{print $1}' <<< "$cache" )
-                echo $cache > ~/.kubcomplete/nodes
-            else
-                cache=$(<~/.kubcomplete/nodes)
-            fi
-            ;;
-        services)
-            if test "`find ~/.kubcomplete/services -mtime +${TIMEOUT}s 2>/dev/null`"; then
-                cache=$(${KUBECMD} get services)
-                cache=$(awk 'NR>1{print $1}' <<< "$cache" )
-                echo $cache > ~/.kubcomplete/services
-            else
-                cache=$(<~/.kubcomplete/services)
-            fi
-            ;;
-        rc)
-            if test "`find ~/.kubcomplete/rc -mtime +${TIMEOUT}s 2>/dev/null`"; then
-                cache=$(${KUBECMD} get rc)
-                cache=$(awk 'NR>1{print $1}' <<< "$cache" )
-                echo $cache > ~/.kubcomplete/rc
-            else
-                cache=$(<~/.kubcomplete/rc)
-            fi
-            ;;
-    esac
-
+    CACHE=""
+    output=$(find ~/.kub-complete/$1 -mtime -${CACHE_TIME}s 2>/dev/null)
+    if [ $? == 1 ] || [ "$output" == "" ]; then
+        CACHE=$(${KUBECMD} get $1)
+        CACHE=$(awk 'NR>1{print $1}' <<< "$CACHE" )
+        echo $CACHE > ~/.kub-complete/$1
+    else
+        CACHE=$(<~/.kub-complete/$1)
+    fi
 }
 
 _kubectl_complete()
@@ -104,7 +76,7 @@ _kubectl_complete()
   local prev=${COMP_WORDS[COMP_CWORD-1]}
   local cur=${COMP_WORDS[COMP_CWORD]}
 
-  known_words="exec|logs*|pods*|rc|replicationcontrollers*|rollingupdate|rolling-update|get|describe|services*"
+  known_words="get|describe|exec|logs*|nodes*|pods*|rc|replicationcontrollers*|rollingupdate|rolling-update|services*"
   last_recognized=""
 
   for word in $line; do
@@ -116,31 +88,32 @@ _kubectl_complete()
   _build_command
 
   COMPREPLY=()
+  echo $last_recognized
   case "$last_recognized" in
       logs|exec|pod|pods)
           _kub_cache_fetch pods
-          podlist="$cache"
+          podlist="$CACHE"
           if [ $? = 0 ]; then
               COMPREPLY=( $( compgen -W "$podlist" -- $cur) )
           fi
           ;;
       replicationcontrollers|replicationcontroller|rc|rollingupdate|rolling-update)
           _kub_cache_fetch rc
-          rclist="$cache"
+          rclist="$CACHE"
           if [ $? = 0 ]; then
               COMPREPLY=( $( compgen -W "$rclist" -- $cur) )
           fi
           ;;
       service|services)
           _kub_cache_fetch services
-          services="$cache"
+          services="$CACHE"
           if [ $? = 0 ]; then
               COMPREPLY=( $( compgen -W "$services" -- $cur) )
           fi
           ;;
       node|nodes)
           _kub_cache_fetch nodes
-          nodes="$cache"
+          nodes="$CACHE"
           if [ $? = 0 ]; then
               COMPREPLY=( $( compgen -W "$nodes" -- $cur) )
           fi
