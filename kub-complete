@@ -15,8 +15,8 @@ kub(){
         if [ -e "kubeconfig" ]; then
             kubeconfig="--kubeconfig=kubeconfig"
         else
-            if [ -e "$HOME/.kubeconfig" ]; then
-                kubeconfig="--kubeconfig=$HOME/.kubeconfig"
+            if [ -e "$HOME/.kube/config" ]; then
+                kubeconfig="--kubeconfig=$HOME/.kube/config"
             fi
         fi
         /usr/bin/env kubectl "$kubeconfig" "$@"
@@ -33,11 +33,15 @@ _build_command(){
     for i in "${!tokens[@]}"; do
         word=${tokens[$i]}
         case "$word" in
-            --kubeconfig=*|--namespace=*|--user=*)   KUBECMD="${KUBECMD} $word";;
-            --kubeconfig |--namespace |--user )      KUBECMD="${KUBECMD} $word ${tokens[$((i+1))]}";;
+            --kubeconfig=*|--namespace=*|--user=*)
+                [[ "$word" =~ "--kubeconfig=~/" ]] && word=${word/=~/=$HOME/}
+                KUBECMD="${KUBECMD} $word";;
+            --kubeconfig |--namespace |--user )
+                token=${tokens[$((i+1))]}
+                [ "$token" == "#~/*" ] && token=${token/#~/$HOME/}
+                KUBECMD="${KUBECMD} $word $token"
         esac
     done
-
 }
 
 _set_kub_sub_commands(){
@@ -64,7 +68,7 @@ _kub_cache_fetch(){
     CACHE=""
     output=$(find $SCRIPT_HOME/cache/$1 -mtime -${CACHE_TIME}s 2>/dev/null)
     if [ $? == 1 ] || [ "$output" == "" ]; then
-        CACHE=$(${KUBECMD} get $1)
+        CACHE=$(eval ${KUBECMD} get $1)
         CACHE=$(awk 'NR>1{print $1}' <<< "$CACHE" )
         echo $CACHE > $SCRIPT_HOME/cache/$1
     else
