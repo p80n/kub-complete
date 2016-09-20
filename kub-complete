@@ -1,8 +1,7 @@
 #!/usr/bin/bash
 
 
-# Rather than query kubernetes for pods,etc with every tabtab, cache the results for CACHE_TIME seconds. Makes tabbing a lot zippier
-CACHE_TIME=30
+CACHE_TIME=5
 
 SCRIPT_HOME=$HOME/.kub-complete
 
@@ -85,7 +84,8 @@ _kubectl_complete()
   local prev=${COMP_WORDS[COMP_CWORD-1]}
   local cur=${COMP_WORDS[COMP_CWORD]}
 
-  known_words="get|describe|exec|logs*|nodes*|pods*|pvc*|rc|replicationcontrollers*|rollingupdate|rolling-update|services*"
+  known_words="get|describe|exec|logs*|--n*|ns|nodes*|pods*|pvc*|rc|replicationcontrollers*|rollingupdate|rolling-update|services*"
+
   last_recognized=""
 
   for word in $line; do
@@ -98,8 +98,14 @@ _kubectl_complete()
 
   COMPREPLY=()
   case "$last_recognized" in
+      --namespace|namespace|ns)
+          _kub_cache_fetch namespaces ;;
+
+      --n*)
+          CACHE="--namespace" ;;
+
       logs|exec|pod|pods)
-          _kub_cache_fetch pods ;;
+          _kub_cache_fetch pods  ;;
 
       pv)
           _kub_cache_fetch pv ;;
@@ -117,7 +123,13 @@ _kubectl_complete()
           _kub_cache_fetch nodes ;;
 
       get|describe)
-          CACHE="nodes pods services" ;;
+          CACHE="namespaces nodes pvcs pvs pods rc secrets services" ;;
+
+      g*)
+          CACHE="get" ;;
+
+      d*)
+          CACHE="describe" ;;
 
       *)
           CACHE=$KUB_SUB_COMMANDS
