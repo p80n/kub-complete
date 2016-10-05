@@ -28,9 +28,7 @@ kub(){
 
 _build_command(){
     local tokens=( $COMP_LINE )
-
     KUBECMD=${tokens[0]}
-
     for i in "${!tokens[@]}"; do
         word=${tokens[$i]}
         case "$word" in
@@ -40,7 +38,15 @@ _build_command(){
             --kubeconfig |--namespace |--user )
                 token=${tokens[$((i+1))]}
                 [ "$token" == "#~/*" ] && token=${token/#~/$HOME/}
-                KUBECMD="${KUBECMD} $word $token"
+                [[ ${COMP_LINE: -1} != " " ]] && token=""
+                KUBECMD="${KUBECMD} $word ";;
+            * )
+                pattern=".*--namespace $"
+                if [[ "$KUBECMD" =~ $pattern  ]]; then
+                    if [[ ${COMP_LINE: -1} == " " ]]; then
+                        KUBECMD="${KUBECMD} $word"
+                    fi
+                fi
         esac
     done
 }
@@ -69,7 +75,12 @@ _kub_cache_fetch(){
     CACHE=""
     output=$(find $SCRIPT_HOME/cache/$1 -mtime -${CACHE_TIME}s 2>/dev/null)
     if [ $? == 1 ] || [ "$output" == "" ]; then
-        CACHE=$(eval ${KUBECMD} get $1)
+        if [ $1 = "namespaces" ]; then
+            CMD=${KUBECMD//--namespace/}  # `kubectl --namespace X get ns` is not proper
+            CACHE=$(eval ${CMD} get ns)
+        else
+            CACHE=$(eval ${KUBECMD} get $1)
+        fi
         CACHE=$(awk 'NR>1{print $1}' <<< "$CACHE" )
         echo $CACHE > $SCRIPT_HOME/cache/$1
     else
@@ -83,21 +94,48 @@ _kubectl_complete()
   local line=${COMP_LINE}
   local prev=${COMP_WORDS[COMP_CWORD-1]}
   local cur=${COMP_WORDS[COMP_CWORD]}
+  local ns_pos=0
 
-  known_words="get|describe|exec|logs*|--n*|ns|nodes*|pods*|pvc*|rc|replicationcontrollers*|rollingupdate|rolling-update|services*"
+  known_words="--a|get|describe|exec|logs*|--n|ns|nodes*|pods*|pvc*|rc|replicationcontrollers*|rollingupdate|rolling-update|services*"
 
   last_recognized=""
+  last_not_namespace=""
+  last_word=""
 
+  local i=0
   for word in $line; do
+      let i++
       if [[ $word =~ $known_words ]]; then
+          if [[ ${word} =~ "namespace" ]]; then
+              ns_pos=$i
+          else
+              last_not_namespace=$word
+          fi
           last_recognized=$word
       fi
+      last_word=$word
   done
+
+  if [[ $last_recognized =~ "namespace" ]]; then
+      if [[ ${line: -1} == " " ]]; then
+        if ! [[ $last_word =~ "namespace" ]]; then
+          last_recognized=$last_not_namespace
+        fi
+      else
+          if [[ ns_pos -le $((i - 2)) ]]; then
+              last_recognized=$last_not_namespace
+          fi
+      fi
+  fi
+
 
   _build_command
 
   COMPREPLY=()
   case "$last_recognized" in
+      --a*)
+          CACHE="--all-namespaces" ;;
+
       --namespace|namespace|ns)
           _kub_cache_fetch namespaces ;;
 
