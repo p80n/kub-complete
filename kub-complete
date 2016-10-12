@@ -75,6 +75,7 @@ _kub_cache_fetch(){
     CACHE=""
     output=$(find $SCRIPT_HOME/cache/$1 -mtime -${CACHE_TIME}s 2>/dev/null)
     if [ $? == 1 ] || [ "$output" == "" ]; then
+        _build_command
         if [ $1 = "namespaces" ]; then
             CMD=${KUBECMD//--namespace/}  # `kubectl --namespace X get ns` is not proper
             CACHE=$(eval ${CMD} get ns)
@@ -96,7 +97,7 @@ _kubectl_complete()
   local cur=${COMP_WORDS[COMP_CWORD]}
   local ns_pos=0
 
-  known_words="--a|get|describe|exec|logs*|--n|ns|nodes*|pods*|pvc*|rc|replicationcontrollers*|rollingupdate|rolling-update|services*"
+  known_words="--a|describe|env|exec|get|logs*|--n|ns|nodes*|pods*|pvc*|rc|replicationcontrollers*|rollingupdate|rolling-update|services*"
 
   last_recognized=""
   last_not_namespace=""
@@ -128,13 +129,13 @@ _kubectl_complete()
       fi
   fi
 
-
-  _build_command
-
   COMPREPLY=()
   case "$last_recognized" in
       --a*)
           CACHE="--all-namespaces" ;;
+
+      env)
+          CACHE="COLUMNS=`tput cols` LINES=`tput lines` TERM=xterm" ;;
 
       --namespace|namespace|ns)
           _kub_cache_fetch namespaces ;;
