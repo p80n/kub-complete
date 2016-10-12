@@ -31,6 +31,8 @@ _build_command(){
     KUBECMD=${tokens[0]}
     for i in "${!tokens[@]}"; do
         word=${tokens[$i]}
+#        echo "kubecmd: $KUBECMD"
+#        echo "word: $word"
         case "$word" in
             --kubeconfig=*|--namespace=*|--user=*)
                 [[ "$word" =~ "--kubeconfig=~/" ]] && word=${word/=~/=$HOME/}
@@ -41,14 +43,19 @@ _build_command(){
                 [[ ${COMP_LINE: -1} != " " ]] && token=""
                 KUBECMD="${KUBECMD} $word ";;
             * )
+#                echo "  here:"
                 pattern=".*--namespace $"
                 if [[ "$KUBECMD" =~ $pattern  ]]; then
-                    if [[ ${COMP_LINE: -1} == " " ]]; then
+                    pattern=".*--namespace [^[:space:]]+ "
+                    if [[ "$COMP_LINE" =~ $pattern ]]; then
+#                    echo "   $KUBECMD =~ $pattern"
+ #                   if [[ ${COMP_LINE: -1} == " " ]]; then
                         KUBECMD="${KUBECMD} $word"
                     fi
                 fi
         esac
     done
+#    echo "kubecmd: $KUBECMD"
 }
 
 _set_kub_sub_commands(){
