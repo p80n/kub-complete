@@ -100,7 +100,7 @@ _kubectl_complete()
   local cur=${COMP_WORDS[COMP_CWORD]}
   local ns_pos=0
 
-  known_words="--a|configmap|delete|deployment|describe|edit|env|exec|get|logs*|-n|--n|ns|nodes*|pods*|pvc*|rc|replicationcontrollers*|rollingupdate|rolling-update|secret*|services*|statefulsets*|sts|svc"
+  known_words="^(--a|configmap|delete|deployment|describe|edit|env|exec|get|logs*|-n|--n|ns|nodes*|pods*|pvc*|rc|replicationcontrollers*|rollingupdate|rolling-update|secret*|services*|statefulsets*|sts|svc)"
 
   last_recognized=""
   last_not_namespace=""
